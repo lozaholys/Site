@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pink Heart Animation</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;700&display=swap");
+
+    :root {
+      --bg: #000;
+      --pink: #ff1493;
+      --pink-hot: #ff4fbc;
+      --text-dark: #18000d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      color: white;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      font-family: "Montserrat", system-ui, sans-serif;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .scene {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+    }
+
+    .glow-button {
+      position: relative;
+      border: 0;
+      border-radius: 999px;
+      padding: clamp(22px, 4vw, 34px) clamp(54px, 9vw, 92px);
+      cursor: pointer;
+      background:
+        radial-gradient(circle at 35% 25%, #fff0fa 0%, var(--pink-hot) 22%, var(--pink) 58%, #c9006d 100%);
+      color: var(--text-dark);
+      font-family: "Great Vibes", cursive;
+      font-size: clamp(42px, 9vw, 86px);
+      font-weight: 400;
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 1px rgba(255,255,255,0.45);
+      box-shadow:
+        0 0 24px rgba(255, 20, 147, 1),
+        0 0 70px rgba(255, 20, 147, 0.85),
+        0 0 145px rgba(255, 20, 147, 0.52),
+        0 0 230px rgba(255, 20, 147, 0.26),
+        inset 0 -12px 28px rgba(82, 0, 44, 0.36),
+        inset 0 8px 22px rgba(255, 255, 255, 0.36);
+      transform: translateZ(0);
+      transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+      animation: buttonPulse 1.75s ease-in-out infinite;
+      will-change: transform, box-shadow, filter;
+    }
+
+    .glow-button::before,
+    .glow-button::after {
+      content: "";
+      position: absolute;
+      inset: -18px;
+      z-index: -1;
+      border-radius: inherit;
+      background: radial-gradient(circle, rgba(255, 20, 147, 0.82), transparent 66%);
+      filter: blur(18px);
+      opacity: 0.95;
+      animation: halo 2.4s ease-in-out infinite;
+      will-change: transform, opacity;
+    }
+
+    .glow-button::after {
+      inset: -42px;
+      filter: blur(34px);
+      opacity: 0.38;
+      animation-duration: 3.1s;
+    }
+
+    .glow-button:hover {
+      transform: translateY(-4px) scale(1.04);
+      filter: brightness(1.12) saturate(1.14);
+      box-shadow:
+        0 0 34px rgba(255, 20, 147, 1),
+        0 0 92px rgba(255, 20, 147, 0.95),
+        0 0 180px rgba(255, 20, 147, 0.64),
+        0 0 290px rgba(255, 20, 147, 0.34),
+        inset 0 -12px 28px rgba(82, 0, 44, 0.36),
+        inset 0 8px 22px rgba(255, 255, 255, 0.4);
+    }
+
+    .glow-button:active {
+      transform: scale(0.94);
+    }
+
+    .blackout {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      background: #000;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .blackout.active {
+      animation: blackout 2.05s ease-in-out forwards;
+    }
+
+    .heart {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 5;
+      width: min(34vw, 220px);
+      aspect-ratio: 1;
+      background: var(--pink);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -38%) rotate(-45deg) scale(0.18);
+      filter:
+        drop-shadow(0 0 20px rgba(255, 20, 147, 0.95))
+        drop-shadow(0 0 62px rgba(255, 20, 147, 0.72))
+        drop-shadow(0 0 130px rgba(255, 20, 147, 0.34));
+      will-change: transform, opacity, filter;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: var(--pink);
+    }
+
+    .heart::before { top: -50%; left: 0; }
+    .heart::after { left: 50%; top: 0; }
+
+    .heart.show {
+      animation: heartFloatIn 2.45s cubic-bezier(.18,.9,.2,1) forwards, heartGlow 2.45s ease-in-out forwards;
+    }
+
+    .scene.hidden {
+      opacity: 0;
+      transform: scale(0.55);
+      transition: opacity 170ms ease, transform 170ms ease;
+    }
+
+    @keyframes buttonPulse {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      50% { filter: brightness(1.22) saturate(1.2); }
+    }
+
+    @keyframes halo {
+      0%, 100% { transform: scale(0.92); opacity: 0.62; }
+      50% { transform: scale(1.15); opacity: 1; }
+    }
+
+    @keyframes blackout {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes heartFloatIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -28%) rotate(-45deg) scale(0.12);
+      }
+      18% {
+        opacity: 0.78;
+        transform: translate(-50%, -48%) rotate(-45deg) scale(0.58);
+      }
+      42% {
+        opacity: 1;
+        transform: translate(-50%, -53%) rotate(-45deg) scale(1.08);
+      }
+      64% {
+        transform: translate(-50%, -50%) rotate(-45deg) scale(0.96);
+      }
+      82% {
+        transform: translate(-50%, -50%) rotate(-45deg) scale(1.025);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) rotate(-45deg) scale(1);
+      }
+    }
+
+    @keyframes heartGlow {
+      0% {
+        filter:
+          drop-shadow(0 0 4px rgba(255, 20, 147, 0.2))
+          drop-shadow(0 0 18px rgba(255, 20, 147, 0.18));
+      }
+      45% {
+        filter:
+          drop-shadow(0 0 26px rgba(255, 20, 147, 1))
+          drop-shadow(0 0 86px rgba(255, 20, 147, 0.9))
+          drop-shadow(0 0 180px rgba(255, 20, 147, 0.48));
+      }
+      100% {
+        filter:
+          drop-shadow(0 0 20px rgba(255, 20, 147, 0.95))
+          drop-shadow(0 0 62px rgba(255, 20, 147, 0.72))
+          drop-shadow(0 0 130px rgba(255, 20, 147, 0.34));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glow-button,
+      .glow-button::before,
+      .glow-button::after,
+      .blackout.active,
+      .heart.show {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  
+    .name {
+      position: fixed;
+      left: 50%;
+      top: calc(50% + 140px);
+      transform: translateX(-50%);
+      font-family: "Great Vibes", cursive;
+      font-size: clamp(36px, 6vw, 64px);
+      color: var(--pink-hot);
+      opacity: 0;
+      text-shadow:
+        0 0 12px rgba(255,20,147,0.9),
+        0 0 40px rgba(255,20,147,0.6);
+      transition: opacity 0.8s ease 0.6s, transform 0.8s ease 0.6s;
+    }
+
+    .name.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <main class="scene" id="scene">
+    <button class="glow-button" id="magicButton">Нажми</button>
+  </main>
+
+  <div class="blackout" id="blackout"></div>
+  <div class="heart" id="heart"></div>
+  <div class="name" id="name">Алиночку</div>
+
+  <script>
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d", { alpha: true });
+    const scene = document.getElementById("scene");
+    const button = document.getElementById("magicButton");
+    const blackout = document.getElementById("blackout");
+    const heart = document.getElementById("heart");
+    const nameEl = document.getElementById("name");
+
+    const PINK = "255,20,147";
+    const HOT_PINK = "255,79,188";
+    const particles = [];
+    const sprites = {};
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let rafId = null;
+    let running = false;
+    let clicked = false;
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.65);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function makeSprite(shape, color) {
+      const key = `${shape}-${color}`;
+      if (sprites[key]) return sprites[key];
+
+      const size = 64;
+      const offscreen = document.createElement("canvas");
+      offscreen.width = size;
+      offscreen.height = size;
+      const sctx = offscreen.getContext("2d");
+      const cx = size / 2;
+      const cy = size / 2;
+
+      const gradient = sctx.createRadialGradient(cx, cy, 1, cx, cy, size / 2);
+      gradient.addColorStop(0, `rgba(${color}, 1)`);
+      gradient.addColorStop(0.28, `rgba(${color}, 0.92)`);
+      gradient.addColorStop(1, `rgba(${color}, 0)`);
+      sctx.fillStyle = gradient;
+      sctx.beginPath();
+      sctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+      sctx.fill();
+
+      sctx.fillStyle = `rgba(${color}, 1)`;
+      sctx.translate(cx, cy);
+
+      if (shape === "star") {
+        sctx.beginPath();
+        sctx.moveTo(0, -13);
+        sctx.lineTo(3.2, -3.2);
+        sctx.lineTo(13, 0);
+        sctx.lineTo(3.2, 3.2);
+        sctx.lineTo(0, 13);
+        sctx.lineTo(-3.2, 3.2);
+        sctx.lineTo(-13, 0);
+        sctx.lineTo(-3.2, -3.2);
+        sctx.closePath();
+        sctx.fill();
+      } else if (shape === "spark") {
+        sctx.roundRect(-6, -6, 12, 12, 4);
+        sctx.fill();
+      } else {
+        sctx.beginPath();
+        sctx.arc(0, 0, 7, 0, Math.PI * 2);
+        sctx.fill();
+      }
+
+      sprites[key] = offscreen;
+      return offscreen;
+    }
+
+    function addParticle(x, y, speed, angle, size, life, glow = 1, shape = "spark") {
+      particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size,
+        life,
+        maxLife: life,
+        glow,
+        shape,
+        color: Math.random() > 0.28 ? PINK : HOT_PINK,
+        spin: (Math.random() - 0.5) * 0.22,
+        rotation: Math.random() * Math.PI
+      });
+    }
+
+    function burst(x, y, amount, force, mode = "circle", lifeBoost = 1, spreadBoost = 1) {
+      const maxParticles = window.innerWidth < 700 ? 380 : 560;
+      const available = Math.max(0, maxParticles - particles.length);
+      const count = Math.min(amount, available);
+
+      for (let i = 0; i < count; i++) {
+        let angle;
+
+        if (mode === "sides") {
+          const side = Math.random() < 0.5 ? Math.PI : 0;
+          angle = side + (Math.random() - 0.5) * 0.98;
+        } else if (mode === "heart") {
+          angle = Math.random() * Math.PI * 2;
+        } else {
+          angle = Math.random() * Math.PI * 2;
+        }
+
+        const isDot = Math.random() < 0.42;
+        const isStar = !isDot && Math.random() < 0.35;
+
+        addParticle(
+          x + (Math.random() - 0.5) * 22,
+          y + (Math.random() - 0.5) * 22,
+          force * spreadBoost * (0.46 + Math.random() * 1.45),
+          angle,
+          isDot ? 0.8 + Math.random() * 1.9 : 1.6 + Math.random() * 4.2,
+          (62 + Math.random() * 64) * lifeBoost,
+          1.25 + Math.random() * 2.4,
+          isDot ? "dot" : isStar ? "star" : "spark"
+        );
+      }
+
+      startLoop();
+    }
+
+    function drawParticle(p) {
+      const t = p.life / p.maxLife;
+      const alpha = Math.max(0, Math.min(1, t));
+      const sprite = makeSprite(p.shape, p.color);
+      const renderSize = p.size * 5.2;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation);
+      ctx.drawImage(sprite, -renderSize / 2, -renderSize / 2, renderSize, renderSize);
+      ctx.restore();
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vx *= 0.986;
+        p.vy *= 0.986;
+        p.vy += 0.018;
+        p.rotation += p.spin;
+        p.life -= 1;
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        } else {
+          drawParticle(p);
+        }
+      }
+
+      if (particles.length > 0) {
+        rafId = requestAnimationFrame(loop);
+      } else {
+        running = false;
+        rafId = null;
+      }
+    }
+
+    function startLoop() {
+      if (!running) {
+        running = true;
+        rafId = requestAnimationFrame(loop);
+      }
+    }
+
+    function buttonCenter() {
+      const rect = button.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2
+      };
+    }
+
+    button.addEventListener("pointerenter", () => {
+      if (clicked) return;
+      const c = buttonCenter();
+      burst(c.x, c.y, 56, 3.4, "circle");
+    });
+
+    button.addEventListener("click", () => {
+      if (clicked) return;
+      clicked = true;
+
+      const center = buttonCenter();
+      burst(center.x, center.y, 270, 15.4, "sides", 1.45, 1.28);
+      setTimeout(() => burst(center.x, center.y, 180, 11.8, "circle", 1.25, 1.2), 240);
+      setTimeout(() => burst(center.x, center.y, 130, 8.8, "sides", 1.08, 1.08), 560);
+      scene.classList.add("hidden");
+
+      setTimeout(() => {
+        blackout.classList.add("active");
+      }, 980);
+
+      setTimeout(() => {
+        heart.classList.add("show");
+        nameEl.classList.add("show");
+        burst(width / 2, height / 2, 250, 10.8, "circle", 1.18, 1.1);
+        setTimeout(() => burst(width / 2, height / 2, 170, 8.4, "sides", 1.08, 1.05), 260);
+        setTimeout(() => burst(width / 2, height / 2, 110, 5.8, "circle", 1, 1), 620);
+      }, 2700);
+    });
+
+    window.addEventListener("resize", resize, { passive: true });
+    resize();
+
+    // Небольшая подсветка вокруг кнопки при входе без постоянной нагрузки.
+    setTimeout(() => {
+      const c = buttonCenter();
+      burst(c.x, c.y, 90, 3.2, "circle");
+    }, 380);
+  </script>
+</body>
+</html>
